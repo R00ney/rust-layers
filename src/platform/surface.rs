@@ -18,7 +18,7 @@ use skia::gl_context::GLContext;
 use skia::gl_context::PlatformDisplayData;
 use std::sync::Arc;
 
-#[cfg(not(target_os="android"))]
+//#[cfg(any(not(target_os="android"),not(target_os="linux")))]
 use gleam::gl;
 
 #[cfg(target_os="macos")]
@@ -31,7 +31,14 @@ pub use platform::linux::surface::{NativeDisplay,
 #[cfg(target_os="linux")]
 use std::ptr;
 
-#[cfg(target_os="android")]
+#[cfg(target_os="linux")]
+pub use platform::linux::surface::{NativeDisplayEGL,
+                                   EGLImageNativeSurface};
+
+//pub use platform::android::surface::NativeDisplay as EGLNativeDisplay;
+
+
+#[cfg(target_os = "android")]
 pub use platform::android::surface::{NativeDisplay,
                                      EGLImageNativeSurface};
 
@@ -44,7 +51,7 @@ pub enum NativeSurface {
     Pixmap(PixmapNativeSurface),
 #[cfg(target_os="macos")]
     IOSurface(IOSurfaceNativeSurface),
-#[cfg(target_os="android")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
     EGLImage(EGLImageNativeSurface),
 }
 
@@ -68,7 +75,7 @@ impl NativeSurface {
    }
 }
 
-#[cfg(target_os="android")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 impl NativeSurface {
     /// Creates a new native surface with uninitialized data.
     pub fn new(display: &NativeDisplay, size: Size2D<i32>) -> NativeSurface {
@@ -95,7 +102,7 @@ macro_rules! native_surface_method_with_mutability {
             #[cfg(target_os="macos")]
             NativeSurface::IOSurface($pattern) =>
                 $surface.$function_name($($argument), *),
-            #[cfg(target_os="android")]
+            #[cfg(any(target_os = "linux", target_os = "android"))]
             NativeSurface::EGLImage($pattern) =>
                 $surface.$function_name($($argument), *),
         }
@@ -132,7 +139,7 @@ macro_rules! native_surface_property {
             NativeSurface::Pixmap(ref surface) => surface.$property_name,
             #[cfg(target_os="macos")]
             NativeSurface::IOSurface(ref surface) => surface.$property_name,
-            #[cfg(target_os="android")]
+            #[cfg(any(target_os = "linux", target_os = "android"))]
             NativeSurface::EGLImage(ref surface) => surface.$property_name,
         }
     };
@@ -238,7 +245,7 @@ impl MemoryBufferNativeSurface {
                          Some(&self.bytes));
     }
 
-    #[cfg(target_os="android")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     pub fn bind_to_texture(&self, _: &NativeDisplay, _: &Texture) {
         panic!("Binding a memory surface to a texture is not yet supported on Android.");
     }
@@ -268,4 +275,3 @@ impl MemoryBufferNativeSurface {
         None
     }
 }
-
